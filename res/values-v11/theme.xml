@@ -1,0 +1,4 @@
+<resources>
+	<style name="Theme" parent="@android:style/Theme.Holo.Wallpaper.NoTitleBar">
+	</style>
+</resources>
