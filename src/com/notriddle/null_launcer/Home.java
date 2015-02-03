@@ -23,17 +23,24 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Process;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ScaleGestureDetector;
 
-public class Home extends Activity implements ScaleGestureDetector.OnScaleGestureListener, View.OnTouchListener {
+public class Home extends Activity implements ScaleGestureDetector.OnScaleGestureListener,
+											  GestureDetector.OnGestureListener, View.OnTouchListener {
 	ScaleGestureDetector mGesture;
+	GestureDetector ltGesture;
 	/** Called when the activity is first created. */
 	@Override public void onCreate(Bundle state) {
 		super.onCreate(null);
 		mGesture = new ScaleGestureDetector(this, this);
+		ltGesture = new GestureDetector(this, this);
+		ltGesture.setIsLongpressEnabled(true);
 		findViewById(android.R.id.content).setOnTouchListener(this);
+		findViewById(android.R.id.content).setClickable(true);
+		findViewById(android.R.id.content).setLongClickable(true);
 	}
 	@Override public void onStop() {
 		super.onStop();
@@ -46,7 +53,9 @@ public class Home extends Activity implements ScaleGestureDetector.OnScaleGestur
 	@Override protected void onSaveInstanceState(Bundle state) {
 	}
 	@Override public boolean onTouch(View v, MotionEvent e) {
-		return mGesture.onTouchEvent(e);
+		boolean result = mGesture.onTouchEvent(e);
+		boolean result2 = ltGesture.onTouchEvent(e);
+		return result || result2;
 	}
 	@Override public boolean onScale(ScaleGestureDetector gesture) {
 		boolean go = gesture.getScaleFactor() <= 0.5 || gesture.getScaleFactor() >= 1.5;
@@ -66,5 +75,36 @@ public class Home extends Activity implements ScaleGestureDetector.OnScaleGestur
 		i.addCategory(Intent.CATEGORY_HOME);
 		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(i);
+	}
+
+	@Override
+	public boolean onDown(MotionEvent motionEvent) {
+		return false;
+	}
+
+	@Override
+	public void onShowPress(MotionEvent motionEvent) {
+
+	}
+
+	@Override
+	public boolean onSingleTapUp(MotionEvent motionEvent) {
+		return false;
+	}
+
+	@Override
+	public boolean onScroll(MotionEvent motionEvent, MotionEvent motionEvent2, float v, float v2) {
+		return false;
+	}
+
+	@Override
+	public void onLongPress(MotionEvent motionEvent) {
+		Intent intent = new Intent(Intent.ACTION_SET_WALLPAPER);
+		startActivity(Intent.createChooser(intent, "Select Wallpaper"));
+	}
+
+	@Override
+	public boolean onFling(MotionEvent motionEvent, MotionEvent motionEvent2, float v, float v2) {
+		return false;
 	}
 }
