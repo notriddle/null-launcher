@@ -22,25 +22,26 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Process;
-import android.util.Log;
-import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ScaleGestureDetector;
+import android.view.ViewConfiguration;
 
 public class Home extends Activity implements ScaleGestureDetector.OnScaleGestureListener,
-											  GestureDetector.OnGestureListener, View.OnTouchListener {
+                                              View.OnTouchListener {
 	ScaleGestureDetector mGesture;
-	GestureDetector ltGesture;
+
+	long lastDownMs = 0;
+	long lastUpMs = 0;
+	int tapNumber = 0;
+
+
 	/** Called when the activity is first created. */
 	@Override public void onCreate(Bundle state) {
 		super.onCreate(null);
 		mGesture = new ScaleGestureDetector(this, this);
-		ltGesture = new GestureDetector(this, this);
-		ltGesture.setIsLongpressEnabled(true);
 		findViewById(android.R.id.content).setOnTouchListener(this);
 		findViewById(android.R.id.content).setClickable(true);
-		findViewById(android.R.id.content).setLongClickable(true);
 	}
 	@Override public void onStop() {
 		super.onStop();
@@ -53,9 +54,41 @@ public class Home extends Activity implements ScaleGestureDetector.OnScaleGestur
 	@Override protected void onSaveInstanceState(Bundle state) {
 	}
 	@Override public boolean onTouch(View v, MotionEvent e) {
-		boolean result = mGesture.onTouchEvent(e);
-		boolean result2 = ltGesture.onTouchEvent(e);
-		return result || result2;
+		mGesture.onTouchEvent(e);
+
+		long eventTime = System.currentTimeMillis();
+		long timePassedFromDown = eventTime - lastDownMs;
+		long timePassedFromUp = eventTime - lastUpMs;
+
+		switch(e.getAction()) {
+			case MotionEvent.ACTION_DOWN:
+				lastDownMs = eventTime;
+				break;
+
+			case MotionEvent.ACTION_UP:
+				if (timePassedFromDown > ViewConfiguration.getTapTimeout()) {
+					tapNumber = 0;
+					lastUpMs = 0;
+					break;
+				}
+
+				if (tapNumber > 0 && timePassedFromUp < ViewConfiguration.getDoubleTapTimeout()) {
+					tapNumber++;
+				}
+				else {
+					tapNumber = 1;
+				}
+
+				lastUpMs = eventTime;
+
+				if (tapNumber == 3) {
+					changeWallpaper();
+				}
+
+				break;
+		}
+
+		return true;
 	}
 	@Override public boolean onScale(ScaleGestureDetector gesture) {
 		boolean go = gesture.getScaleFactor() <= 0.5 || gesture.getScaleFactor() >= 1.5;
@@ -69,6 +102,12 @@ public class Home extends Activity implements ScaleGestureDetector.OnScaleGestur
 	}
 	@Override public void onScaleEnd(ScaleGestureDetector gesture) {
 	}
+
+	private void changeWallpaper() {
+		Intent intent = new Intent(Intent.ACTION_SET_WALLPAPER);
+		startActivity(Intent.createChooser(intent, "Select Wallpaper"));
+	}
+
 	private void changeLauncher() {
 		getPackageManager().clearPackagePreferredActivities(getPackageName());
 		Intent i = new Intent(Intent.ACTION_MAIN);
@@ -76,35 +115,5 @@ public class Home extends Activity implements ScaleGestureDetector.OnScaleGestur
 		i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(i);
 	}
-
-	@Override
-	public boolean onDown(MotionEvent motionEvent) {
-		return false;
-	}
-
-	@Override
-	public void onShowPress(MotionEvent motionEvent) {
-
-	}
-
-	@Override
-	public boolean onSingleTapUp(MotionEvent motionEvent) {
-		return false;
-	}
-
-	@Override
-	public boolean onScroll(MotionEvent motionEvent, MotionEvent motionEvent2, float v, float v2) {
-		return false;
-	}
-
-	@Override
-	public void onLongPress(MotionEvent motionEvent) {
-		Intent intent = new Intent(Intent.ACTION_SET_WALLPAPER);
-		startActivity(Intent.createChooser(intent, "Select Wallpaper"));
-	}
-
-	@Override
-	public boolean onFling(MotionEvent motionEvent, MotionEvent motionEvent2, float v, float v2) {
-		return false;
-	}
 }
+
